@@ -1,0 +1,21 @@
+{
+  "name": "aplikasitelegrambot",
+  "version": "1.0.0",
+  "main": "monitor_domains.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.7.4",
+    "cheerio": "^1.0.0",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.0",
+    "node-telegram-bot-api": "^0.66.0",
+    "puppeteer": "^23.1.0",
+    "telegraf": "^4.16.3"
+  }
+}

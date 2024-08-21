@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Monitoring</title>
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Domain Monitoring Status</h1>
+    <table id="domainsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Domain Name</th>
+          <th>Status</th>
+          <th>Last Checked</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data rows will be inserted here -->
+      </tbody>
+    </table>
+
+    <script>
+      async function fetchData() {
+        try {
+          const response = await fetch("/api/domains");
+          const data = await response.json();
+          const tableBody = document.querySelector("#domainsTable tbody");
+          tableBody.innerHTML = ""; // Clear existing rows
+
+          data.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                        <td>${row.id}</td>
+                        <td>${row.domain_name}</td>
+                        <td>${row.status}</td>
+                        <td>${row.last_checked}</td>
+                    `;
+            tableBody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+
+      // Fetch data every 4 minutes (240000 ms)
+      fetchData();
+      setInterval(fetchData, 240000);
+    </script>
+  </body>
+</html>
