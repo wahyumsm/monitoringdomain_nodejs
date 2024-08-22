@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Monitor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      h1 {
+        color: #333;
+      }
+      .container {
+        width: 80%;
+        max-width: 900px;
+        margin: 20px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f9;
+      }
+      td.status-banned {
+        color: #2ecc71;
+      }
+      td.status-ok {
+        color: #e74c3c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Domain Monitor</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="domains"></tbody>
+      </table>
+    </div>
+    <script>
+      async function fetchDomains() {
+        try {
+          const response = await fetch("/domains");
+          const data = await response.json();
+          console.log(data); // Debugging
+          const domainsTbody = document.getElementById("domains");
+
+          if (Array.isArray(data)) {
+            data.forEach((domain) => {
+              const statusClass =
+                domain.status === "BANNED" ? "status-banned" : "status-ok";
+              const row = document.createElement("tr");
+              row.innerHTML = `
+              <td>${domain.url}</td>
+              <td class="${statusClass}">${domain.status}</td>
+            `;
+              domainsTbody.appendChild(row);
+            });
+          } else {
+            console.error("Data received is not an array:", data);
+          }
+        } catch (error) {
+          console.error("Error fetching domains:", error);
+        }
+      }
+
+      // Call function to fetch data when page loads
+      fetchDomains();
+    </script>
+  </body>
+</html>

@@ -1,6 +1,8 @@
+const express = require("express");
 const puppeteer = require("puppeteer");
 const axios = require("axios");
-
+const app = express();
+const port = 3000;
 const botToken = "7205420800:AAHl49A32cE3cim-QUuVeoZZsqorIGfWDY4";
 const channelId = "-1002202234253";
 const predefinedWebsites = [
@@ -10,17 +12,26 @@ const predefinedWebsites = [
   "jesusadventcalendar.com",
   "sini.pages.dev",
   "vegas138rtp-03.pages.dev",
+  "kontol.com",
 ];
 
-async function checkWebsites(websites, listName) {
+let monitoredDomains = [];
+
+app.use(express.json());
+app.use(express.static("public")); // Serve static files from the 'public' directory
+
+app.get("/domains", (req, res) => {
+  res.json(monitoredDomains);
+});
+
+async function checkWebsites(websites) {
   const browser = await puppeteer.launch({
     headless: true,
     ignoreHTTPSErrors: true,
     args: ["--no-sandbox", "--ignore-certificate-errors"],
   });
 
-  let resultMessage = `Laporan Dari ${listName}\n\n`;
-  let bannedDomainsFound = false;
+  let result = [];
 
   try {
     const page = await browser.newPage();
@@ -40,7 +51,6 @@ async function checkWebsites(websites, listName) {
     await page.waitForSelector("#daftar-block", { visible: true });
 
     let previousHeight;
-    let result = [];
 
     while (true) {
       previousHeight = await page.evaluate(
@@ -59,20 +69,12 @@ async function checkWebsites(websites, listName) {
 
     result = await page.evaluate(() => {
       const rows = document.querySelectorAll("#daftar-block tbody tr");
-      const data = Array.from(rows).map((row) => {
+      return Array.from(rows).map((row) => {
         const columns = row.querySelectorAll("td");
         const url = columns[0]?.innerText || "No URL";
         const status = columns[1]?.innerText || "No Status";
         return { url, status };
       });
-      return data;
-    });
-
-    result.forEach((entry) => {
-      if (entry.status === "Ada") {
-        resultMessage += `🚫 URL ${entry.url} BANNED\n`;
-        bannedDomainsFound = true;
-      }
     });
 
     await page.close();
@@ -82,9 +84,7 @@ async function checkWebsites(websites, listName) {
     await browser.close();
   }
 
-  resultMessage += "\nNawala Checker Via : https://trustpositif.kominfo.go.id/";
-
-  return bannedDomainsFound ? resultMessage : null;
+  return result.filter((entry) => entry.status === "Ada");
 }
 
 async function sendMessage(channelId, message) {
@@ -109,25 +109,30 @@ async function sendMessage(channelId, message) {
 }
 
 async function performCheck() {
-  const resultMessage = await checkWebsites(
-    predefinedWebsites,
-    "Predefined List"
-  );
+  const result = await checkWebsites(predefinedWebsites);
 
-  if (resultMessage) {
+  if (result.length > 0) {
+    const resultMessage = result
+      .map((entry) => `🚫 URL ${entry.url} BANNED`)
+      .join("\n");
     await sendMessage(channelId, resultMessage);
+    monitoredDomains = result; // Update monitoredDomains with the array
   } else {
     console.log("No banned domains found, no message sent.");
+    monitoredDomains = [];
   }
 }
 
-// Fungsi utama
 async function main() {
   await performCheck();
   setInterval(async () => {
     console.log("Running the 10-minute check...");
     await performCheck();
-  }, 180000);
+  }, 180000); // 10 minutes in milliseconds
 }
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
 
 main();
