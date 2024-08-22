@@ -127,7 +127,7 @@ async function main() {
   setInterval(async () => {
     console.log("Running the 10-minute check...");
     await performCheck();
-  }, 600000);
+  }, 180000);
 }
 
 main();
