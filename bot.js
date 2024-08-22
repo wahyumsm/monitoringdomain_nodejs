@@ -1,11 +1,8 @@
 const puppeteer = require("puppeteer");
 const axios = require("axios");
 
-// Token Bot Telegram dan ID Saluran
-const botToken = "YOUR_ACTUAL_BOT_TOKEN"; // Ganti dengan token bot Telegram Anda
-const channelId = "-1001234567890"; // Ganti dengan ID saluran Telegram Anda atau username tanpa @
-
-// Daftar domain yang ditentukan
+const botToken = "7205420800:AAHl49A32cE3cim-QUuVeoZZsqorIGfWDY4";
+const channelId = "-1002202234253";
 const predefinedWebsites = [
   "jackscottmusic.com",
   "vegas138r.lol",
@@ -15,7 +12,6 @@ const predefinedWebsites = [
   "vegas138rtp-03.pages.dev",
 ];
 
-// Fungsi untuk memeriksa status website menggunakan Puppeteer
 async function checkWebsites(websites, listName) {
   const browser = await puppeteer.launch({
     headless: true,
@@ -91,7 +87,6 @@ async function checkWebsites(websites, listName) {
   return bannedDomainsFound ? resultMessage : null;
 }
 
-// Fungsi untuk mengirim pesan ke Telegram
 async function sendMessage(channelId, message) {
   try {
     const TELEGRAM_API_URL = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -113,7 +108,6 @@ async function sendMessage(channelId, message) {
   }
 }
 
-// Fungsi utama untuk melakukan pemeriksaan
 async function performCheck() {
   const resultMessage = await checkWebsites(
     predefinedWebsites,
@@ -133,8 +127,7 @@ async function main() {
   setInterval(async () => {
     console.log("Running the 10-minute check...");
     await performCheck();
-  }, 600000); // 10 menit
+  }, 600000);
 }
 
-// Jalankan fungsi utama
 main();
