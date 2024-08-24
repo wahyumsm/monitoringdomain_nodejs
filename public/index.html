@@ -3,34 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Domain Monitor</title>
+    <title>Website Monitor</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f9;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
-      h1 {
-        color: #333;
-      }
-      .container {
-        width: 80%;
-        max-width: 900px;
-        margin: 20px;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
       }
       table,
       th,
@@ -43,58 +20,174 @@
         text-align: left;
       }
       th {
-        background-color: #f4f4f9;
+        background-color: #f4f4f4;
       }
-      td.status-banned {
-        color: #2ecc71;
+      .status-online {
+        color: green;
+        font-weight: bold;
       }
-      td.status-ok {
-        color: #e74c3c;
+      .status-offline {
+        color: red;
+        font-weight: bold;
+      }
+      .container {
+        width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        text-align: center;
+      }
+      form {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      input {
+        padding: 10px;
+        margin-right: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .action-buttons button {
+        background-color: #28a745;
+        margin-right: 5px;
+      }
+      .action-buttons button.delete {
+        background-color: #dc3545;
+      }
+      .action-buttons button:hover {
+        background-color: #0069d9;
+      }
+      .action-buttons button.delete:hover {
+        background-color: #c82333;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Domain Monitor</h1>
-      <table>
+      <h1>Website Monitor</h1>
+      <form id="addWebsiteForm">
+        <input
+          type="text"
+          id="websiteUrl"
+          placeholder="Enter website URL"
+          required
+        />
+        <button type="submit">Add or Update Website</button>
+      </form>
+
+      <h2>Current Websites</h2>
+      <table id="websitesTable">
         <thead>
           <tr>
-            <th>Domain</th>
+            <th>URL</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="domains"></tbody>
+        <tbody></tbody>
       </table>
     </div>
-    <script>
-      async function fetchDomains() {
-        try {
-          const response = await fetch("/domains");
-          const data = await response.json();
-          console.log(data); // Debugging
-          const domainsTbody = document.getElementById("domains");
 
-          if (Array.isArray(data)) {
-            data.forEach((domain) => {
-              const statusClass =
-                domain.status === "BANNED" ? "status-banned" : "status-ok";
-              const row = document.createElement("tr");
-              row.innerHTML = `
-              <td>${domain.url}</td>
-              <td class="${statusClass}">${domain.status}</td>
-            `;
-              domainsTbody.appendChild(row);
-            });
+    <script>
+      document
+        .getElementById("addWebsiteForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const url = document.getElementById("websiteUrl").value;
+
+          const response = await fetch("/api/websites", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          if (response.ok) {
+            alert("Website added/updated successfully");
+            loadWebsites();
           } else {
-            console.error("Data received is not an array:", data);
+            alert("Error adding/updating website");
           }
-        } catch (error) {
-          console.error("Error fetching domains:", error);
+        });
+
+      async function loadWebsites() {
+        const response = await fetch("/api/websites");
+        const websites = await response.json();
+        const tableBody = document.querySelector("#websitesTable tbody");
+        tableBody.innerHTML = "";
+
+        websites.forEach((website) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${website.url}</td>
+            <td class="${
+              website.status === "Safe" ? "status-online" : "status-offline"
+            }">${website.status}</td>
+            <td class="action-buttons">
+              <button onclick="updateWebsite('${website.id}', '${
+            website.url
+          }')">Update</button>
+              <button class="delete" onclick="deleteWebsite('${
+                website.id
+              }')">Delete</button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      async function deleteWebsite(id) {
+        if (confirm("Are you sure you want to delete this website?")) {
+          const response = await fetch(`/api/websites/${id}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            alert("Website deleted successfully");
+            loadWebsites();
+          } else {
+            alert("Error deleting website");
+          }
         }
       }
 
-      // Call function to fetch data when page loads
-      fetchDomains();
+      async function updateWebsite(id, oldUrl) {
+        const newUrl = prompt("Enter new URL:", oldUrl);
+        if (newUrl) {
+          const response = await fetch(`/api/websites/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url: newUrl }),
+          });
+
+          if (response.ok) {
+            alert("Website updated successfully");
+            loadWebsites();
+          } else {
+            alert("Error updating website");
+          }
+        }
+      }
+
+      // Load websites on page load
+      loadWebsites();
     </script>
   </body>
 </html>
