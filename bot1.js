@@ -6,7 +6,7 @@ const express = require("express");
 
 const botToken = "7205420800:AAHl49A32cE3cim-QUuVeoZZsqorIGfWDY4";
 const channelId = "-1002202234253";
-const domainsFilePath = path.join(__dirname, "domains.json");
+const domainsFilePath = path.join(__dirname, "./domains.json");
 console.log("Path to domains.json:", domainsFilePath);
 
 const bot = new Telegraf(botToken);
