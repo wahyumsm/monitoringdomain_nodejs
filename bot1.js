@@ -6,24 +6,20 @@ const express = require("express");
 
 const botToken = "7205420800:AAHl49A32cE3cim-QUuVeoZZsqorIGfWDY4";
 const channelId = "-1002202234253";
-const domainsFilePath = path.join(__dirname, "./domains.json");
-console.log("Path to domains.json:", domainsFilePath);
-
 const bot = new Telegraf(botToken);
 const app = express();
 const port = 3000; // Port for the Express server
 
 app.use(express.json());
 app.use(express.static("public"));
-
-// Membaca file domains.json secara asynchronous
+const domainsFilePath = path.join(__dirname, "./domains.json");
+console.log("Path to domains.json:", domainsFilePath);
 fs.readFile(domainsFilePath, "utf8", (err, data) => {
   if (err) {
     console.error("Gagal membaca file domains.json:", err);
     return;
   }
 
-  // Parsing data menjadi JSON
   try {
     const domains = JSON.parse(data);
     console.log("Daftar domains:", domains);
@@ -31,6 +27,7 @@ fs.readFile(domainsFilePath, "utf8", (err, data) => {
     console.error("Gagal memparsing JSON:", parseError);
   }
 });
+
 // Helper functions
 function readDomains() {
   try {
