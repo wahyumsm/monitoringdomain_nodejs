@@ -18,7 +18,7 @@ app.use(express.static("public"));
 // Helper functions
 function readDomains() {
   try {
-    const data = fs.readFileSync(domainsFilePath, "utf8");
+    const data = fs.readFileSync(path.join(__dirname, "domains.json"), "utf8");
     return JSON.parse(data);
   } catch (err) {
     console.error("Error reading domains:", err);
