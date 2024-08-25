@@ -62,7 +62,13 @@ async function sendTelegramMessage(message) {
 
 // API Routes
 app.get("/api/websites", (req, res) => {
-  res.json(readDomains());
+  try {
+    const data = fs.readFileSync(domainsFilePath, "utf8");
+    const domains = JSON.parse(data);
+    res.json(domains);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to read or parse domains.json" });
+  }
 });
 
 app.post("/api/websites", async (req, res) => {
