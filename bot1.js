@@ -59,16 +59,12 @@ async function sendTelegramMessage(message) {
     console.error("Error sending message to Telegram:", error);
   }
 }
-
+app.get("/", (req, res) => {
+  res.send("Selamat datang di server Express.js!");
+});
 // API Routes
 app.get("/api/websites", (req, res) => {
-  try {
-    const data = fs.readFileSync(domainsFilePath, "utf8");
-    const domains = JSON.parse(data);
-    res.json(domains);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to read or parse domains.json" });
-  }
+  res.json(readDomains());
 });
 
 app.post("/api/websites", async (req, res) => {
