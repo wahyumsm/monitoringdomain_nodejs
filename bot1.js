@@ -12,7 +12,7 @@ const port = 3000; // Port for the Express server
 
 app.use(express.json());
 app.use(express.static("public"));
-const domainsFilePath = path.join(__dirname, "./domains.json");
+const domainsFilePath = path.join(__dirname, "domains.json");
 console.log("Path to domains.json:", domainsFilePath);
 fs.readFile(domainsFilePath, "utf8", (err, data) => {
   if (err) {
