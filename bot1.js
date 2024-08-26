@@ -27,6 +27,10 @@ db.connect((err) => {
   }
   console.log("Connected to MySQL");
 });
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 
 async function checkStatus(url) {
   try {
