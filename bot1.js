@@ -16,7 +16,7 @@ app.use(express.static("public"));
 const db = mysql.createConnection({
   host: "localhost",
   user: "root", // Update with your MySQL username
-  password: "newpassword", // Update with your MySQL password
+  password: "", // Update with your MySQL password
   database: "domain_monitor",
 });
 
@@ -168,15 +168,23 @@ app.listen(port, () => {
 });
 
 async function performCheck() {
+  console.log("Starting performCheck..."); // Log awal
+
   readDomains(async (domains) => {
+    console.log(`Retrieved ${domains.length} domains from database.`); // Log jumlah domain
+
     let bannedDomainsMessage = "Status Domain BANNED Terbaru:\n\n";
 
     // Dapatkan status terbaru untuk semua domain
     const domainsWithStatus = await Promise.all(
-      domains.map(async (domain) => ({
-        ...domain,
-        status: await checkStatus(domain.url),
-      }))
+      domains.map(async (domain) => {
+        const status = await checkStatus(domain.url);
+        console.log(`Checked status for ${domain.url}: ${status}`); // Log status per domain
+        return {
+          ...domain,
+          status,
+        };
+      })
     );
 
     // Filter hanya domain yang banned
@@ -189,12 +197,87 @@ async function performCheck() {
         bannedDomainsMessage += `🚫 URL ${domain.url} BANNED\n`;
       });
 
-      console.log("Generated banned domains message:\n", bannedDomainsMessage);
+      console.log("Generated banned domains message:\n", bannedDomainsMessage); // Log pesan
       await sendTelegramMessage(bannedDomainsMessage);
     } else {
       console.log("No banned domains detected.");
     }
   });
+}
+async function checkWebsitesFromKominfo(websites) {
+  const browser = await puppeteer.launch({
+    headless: true,
+    ignoreHTTPSErrors: true,
+    args: ["--no-sandbox", "--ignore-certificate-errors"],
+  });
+
+  let resultMessage = "Laporan Dari Kominfo\n\n";
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.goto("https://trustpositif.kominfo.go.id/"); // Mengakses halaman Kominfo
+    await page.waitForSelector("#press-to-modal");
+    await page.click("#press-to-modal");
+    await page.waitForSelector("#input-data");
+
+    const websitesStr = websites.join("\n");
+    await page.evaluate((websitesStr) => {
+      document.querySelector("#input-data").value = websitesStr; // Mengisi daftar website
+    }, websitesStr);
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await page.click("#text-footer");
+    await page.waitForSelector("#daftar-block", { visible: true });
+
+    let previousHeight;
+    let result = [];
+
+    while (true) {
+      previousHeight = await page.evaluate(
+        'document.querySelector("#daftar-block tbody").scrollHeight'
+      );
+      await page.evaluate(
+        'window.scrollTo(0, document.querySelector("#daftar-block tbody").scrollHeight)'
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Tunggu data tambahan
+
+      const newHeight = await page.evaluate(
+        'document.querySelector("#daftar-block tbody").scrollHeight'
+      );
+      if (newHeight === previousHeight) break;
+    }
+
+    result = await page.evaluate(() => {
+      const rows = document.querySelectorAll("#daftar-block tbody tr");
+      const data = Array.from(rows).map((row) => {
+        const columns = row.querySelectorAll("td");
+        const url = columns[0].innerText;
+        const status = columns[1].innerText;
+        return { url, status };
+      });
+      return data;
+    });
+
+    result.forEach((entry) => {
+      console.log(entry);
+      if (entry.status === "Ada") {
+        resultMessage += `🚫 URL ${entry.url} BANNED\n`;
+      } else {
+        resultMessage += `✅ URL ${entry.url} AMAN\n`;
+      }
+    });
+
+    await page.close();
+  } catch (error) {
+    console.error(`Error checking websites from Kominfo:`, error);
+  } finally {
+    await browser.close();
+  }
+
+  resultMessage += "\nNawala Checker Via : https://trustpositif.kominfo.go.id/";
+  console.log(resultMessage);
+  return resultMessage;
 }
 
 async function main() {
