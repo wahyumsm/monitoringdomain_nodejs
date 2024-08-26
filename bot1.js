@@ -30,97 +30,12 @@ db.connect((err) => {
 
 async function checkStatus(url) {
   try {
-    console.log(`Checking status for URL: ${url}`);
     const response = await axios.get(url);
-    console.log(`Received status code ${response.status} for URL: ${url}`);
     return response.status === 200 ? "Online" : "Offline";
   } catch (error) {
-    console.error(`Error checking status for URL ${url}:`, error.message);
+    console.error(`Error checking status for URL ${url}:`, error);
     return "Offline";
   }
-}
-
-async function checkWebsitesFromKominfo(websites) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    ignoreHTTPSErrors: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--ignore-certificate-errors",
-    ],
-  });
-
-  let resultMessage = "Laporan Dari Kominfo\n\n";
-
-  try {
-    const page = await browser.newPage();
-    console.log("Navigating to Kominfo site...");
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.goto("https://trustpositif.kominfo.go.id/");
-    await page.waitForSelector("#press-to-modal");
-    await page.click("#press-to-modal");
-    await page.waitForSelector("#input-data");
-
-    const websitesStr = websites.join("\n");
-    console.log(`Inputting websites: ${websitesStr}`);
-    await page.evaluate((websitesStr) => {
-      document.querySelector("#input-data").value = websitesStr;
-    }, websitesStr);
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log("Clicking submit button...");
-    await page.click("#text-footer");
-    await page.waitForSelector("#daftar-block", { visible: true });
-
-    let previousHeight;
-    let result = [];
-
-    while (true) {
-      previousHeight = await page.evaluate(
-        'document.querySelector("#daftar-block tbody").scrollHeight'
-      );
-      await page.evaluate(
-        'window.scrollTo(0, document.querySelector("#daftar-block tbody").scrollHeight)'
-      );
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const newHeight = await page.evaluate(
-        'document.querySelector("#daftar-block tbody").scrollHeight'
-      );
-      if (newHeight === previousHeight) break;
-    }
-
-    result = await page.evaluate(() => {
-      const rows = document.querySelectorAll("#daftar-block tbody tr");
-      const data = Array.from(rows).map((row) => {
-        const columns = row.querySelectorAll("td");
-        const url = columns[0].innerText;
-        const status = columns[1].innerText;
-        return { url, status };
-      });
-      return data;
-    });
-
-    result.forEach((entry) => {
-      console.log(entry);
-      if (entry.status === "Ada") {
-        resultMessage += `🚫 URL ${entry.url} BANNED\n`;
-      } else {
-        resultMessage += `✅ URL ${entry.url} AMAN\n`;
-      }
-    });
-
-    await page.close();
-  } catch (error) {
-    console.error(`Error checking websites from Kominfo:`, error);
-  } finally {
-    await browser.close();
-  }
-
-  resultMessage += "\nNawala Checker Via : https://trustpositif.kominfo.go.id/";
-  console.log(resultMessage);
-  return resultMessage;
 }
 
 async function sendTelegramMessage(message) {
