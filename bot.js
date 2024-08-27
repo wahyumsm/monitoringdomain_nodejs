@@ -1,24 +1,34 @@
 const express = require("express");
 const puppeteer = require("puppeteer");
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
 const port = 3000;
 const botToken = "7205420800:AAHl49A32cE3cim-QUuVeoZZsqorIGfWDY4";
 const channelId = "-1002202234253";
-const predefinedWebsites = [
-  "jackscottmusic.com",
-  "vegas138r.lol",
-  "goassam.com",
-  "jesusadventcalendar.com",
-  "sini.pages.dev",
-  "vegas138rtp-03.pages.dev",
-  "kontol.com",
-];
-
 let monitoredDomains = [];
 
 app.use(express.json());
 app.use(express.static("public")); // Serve static files from the 'public' directory
+
+// Read predefined websites from URL
+async function readWebsitesFromURL() {
+  const url = "https://maxwin.page/website.txt";
+  try {
+    const response = await axios.get(url);
+    const data = response.data;
+    const websites = data
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    return websites;
+  } catch (error) {
+    console.error("Error fetching websites from URL:", error);
+    return [];
+  }
+}
 
 app.get("/domains", (req, res) => {
   res.json(monitoredDomains);
@@ -109,7 +119,8 @@ async function sendMessage(channelId, message) {
 }
 
 async function performCheck() {
-  const result = await checkWebsites(predefinedWebsites);
+  const websites = await readWebsitesFromURL(); // Updated to read from URL
+  const result = await checkWebsites(websites);
 
   if (result.length > 0) {
     const resultMessage = result
