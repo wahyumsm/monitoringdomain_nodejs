@@ -119,7 +119,7 @@ async function sendMessage(channelId, message) {
 }
 
 async function performCheck() {
-  const websites = await readWebsitesFromURL(); // Updated to read from URL
+  const websites = await readWebsitesFromURL();
   const result = await checkWebsites(websites);
 
   if (result.length > 0) {
@@ -127,7 +127,7 @@ async function performCheck() {
       .map((entry) => `🚫 URL ${entry.url} BANNED`)
       .join("\n");
     await sendMessage(channelId, resultMessage);
-    monitoredDomains = result; // Update monitoredDomains with the array
+    monitoredDomains = result;
   } else {
     console.log("No banned domains found, no message sent.");
     monitoredDomains = [];
